@@ -219,37 +219,93 @@ public:
 		
 protected:
 
+	/** Character values on tick*/
 	void SetEssentialValues(ACharacter* Character, const float DeltaTime);
-	void UpdateMovementState(ACharacter* OwningCharacter, const float DeltaTime);	
-	const EMovementGait GetAllowedGait(ACharacter* OwningCharacter) const;		
-	EMovementGait GetActualGait(const EMovementGait G);
-	const bool CanSprint(ACharacter* OwningCharacter) const;
-	void UpdateDynamicMovementSettings(const EMovementGait G, ACharacter* OwningCharacter);
-	const FMovementSettings& GetTargetMovementSettings() const;	
-	const float GetMappedSpeed() const;
-	void UpdateGroundedRotation(ACharacter* OwningCharacter, const float DeltaTime);
-	void SmoothCharacterRotation(ACharacter* OwningPlayer, const FRotator& Target, const float TargetLerpSpeed, const float ActorInterpSpeed, const float DeltaTime);
-	const float GetAnimCurveValue(ACharacter* OwningCharacter, const FName& CurveName);
-	void LimitRotation(ACharacter* OwningCharacter, const float AimYawMin, const float AimYawMax, const float InterpSpeed, const float DeltaTime);
-	void UpdateInAirRotation(ACharacter* OwningCharacter, const float DeltaTime);
-	const bool MantleCheck(ACharacter* OwningCharacter, const FMantleTraceParams& TraceParams);
-	const FVector GetPlayerMovementInput(ACharacter* OwningCharacter);
-	const FVector GetCapsuleBaseLocation(ACharacter* OwningCharacter, const float ZOffset);
-	const FVector GetCapsuleLocationFromBase(ACharacter* OwningCharacter, const FVector& BaseLocation, const float ZOffset);
-	const bool CapsuleHasRoomCheck(ACharacter* OwningCharacter, const UCapsuleComponent* Capsule, const FVector& TargetLocation, const float HeightOffset, const float RadiusOffset);
-	void MantleStart(ACharacter* OwningCharacter, const float MantleHeight, FComponentAndTransform& MantleLedgeWorldSpace, const EMantleType Type);
-	void MantleUpdate(ACharacter* OwningCharacter, const float DeltaTime);
-	void MantleEnd(ACharacter* OwningCharacter);
-	const bool SetActorLocationAndRotationUpdateTarget(ACharacter* OwningCharacter, FVector NewLocation, FRotator NewRotation, bool bSweep, bool bTeleport, FHitResult* OutSweepHitResult);
-	
 
+	/** Check and update movement state on tick */
+	void UpdateMovementState(ACharacter* OwningCharacter, const float DeltaTime);	
+
+	/** Get what gait is currently allowed given other metrics */
+	const EMovementGait GetAllowedGait(ACharacter* OwningCharacter) const;		
+
+	/** Get the actual gait happening */
+	EMovementGait GetActualGait(const EMovementGait G);
+
+	/** Can sprint happen */
+	const bool CanSprint(ACharacter* OwningCharacter) const;
+
+	/** Updates the dynamic animation movement settings based on gait */
+	void UpdateDynamicMovementSettings(const EMovementGait G, ACharacter* OwningCharacter);
+
+	/** Gets the data for target movement */
+	const FMovementSettings& GetTargetMovementSettings() const;	
+
+	/** Maps the speed based on walk, run, and sprint values*/
+	const float GetMappedSpeed() const;
+
+	/** Updates the rotation while on the ground */
+	void UpdateGroundedRotation(ACharacter* OwningCharacter, const float DeltaTime);
+
+	/** Smooths the character rotation with lerp*/
+	void SmoothCharacterRotation(ACharacter* OwningPlayer, const FRotator& Target, const float TargetLerpSpeed, const float ActorInterpSpeed, const float DeltaTime);
+
+	/** Utility to get a curve value on the Owning Character */
+	const float GetAnimCurveValue(ACharacter* OwningCharacter, const FName& CurveName);
+
+	/** Limit the rotation of the OwningCharacter based on Min and Max */
+	void LimitRotation(ACharacter* OwningCharacter, const float AimYawMin, const float AimYawMax, const float InterpSpeed, const float DeltaTime);
+
+	/** Updates the rotation of the OwningCharacter while in the air */
+	void UpdateInAirRotation(ACharacter* OwningCharacter, const float DeltaTime);
+
+	/** Check while in the air to see if there is a mantle ledge nearby */
+	const bool MantleCheck(ACharacter* OwningCharacter, const FMantleTraceParams& TraceParams);
+
+	/** Get the OwningCharacter input for movment */
+	const FVector GetPlayerMovementInput(ACharacter* OwningCharacter);
+
+	/** Get the OwningCharacter capsule location*/
+	const FVector GetCapsuleBaseLocation(ACharacter* OwningCharacter, const float ZOffset);
+
+	/** Get the OwningCharacter capsule location based on the base value */
+	const FVector GetCapsuleLocationFromBase(ACharacter* OwningCharacter, const FVector& BaseLocation, const float ZOffset);
+
+	/** Check to see if OwningPlayer has room with the current capsule size */
+	const bool CapsuleHasRoomCheck(ACharacter* OwningCharacter, const UCapsuleComponent* Capsule, const FVector& TargetLocation, const float HeightOffset, const float RadiusOffset);
+
+	/** Start to mantle */
+	void MantleStart(ACharacter* OwningCharacter, const float MantleHeight, FComponentAndTransform& MantleLedgeWorldSpace, const EMantleType Type);
+
+	/** Update every frame while mantling */
+	void MantleUpdate(ACharacter* OwningCharacter, const float DeltaTime);
+
+	/** Mantle clean up after it is done. */
+	void MantleEnd(ACharacter* OwningCharacter);
+
+	/** Utility to set location and rotation on OwningCharacter */
+	const bool SetActorLocationAndRotationUpdateTarget(ACharacter* OwningCharacter, FVector NewLocation, FRotator NewRotation, bool bSweep, bool bTeleport, FHitResult* OutSweepHitResult);
+
+	/** Update during ragdoll */
+	void RagdollUpdate(ACharacter* OwningCharacter, const float DeltaTime);	
+
+	/** Get the correct stored mantle asset based on the type of mantle requested*/
 	const FMantleAsset& GetMantleAsset(const EMantleType Type);
+
+	/** Per frame update for mantle */
 	void MantleTimelineUpdate(float Delta);
+
+	/** When the mantle as finished */
 	void MantleTimelineFinished();
 
+	/** Sets the OwningCharacter locatin during ragdoll*/
+	void SetActorLocationDuringRagdoll(ACharacter* OwningCharacter);	
+
+	/** utility to get owning outer as an ACharacter */
 	ACharacter* GetOwningCharacter()
 	{
 		return Cast<ACharacter>(const_cast<ACharacter*>(CharacterOwner.Get(false)));
 	}
+
+	/** stored character */
 	TWeakObjectPtr<ACharacter> CharacterOwner;
 };

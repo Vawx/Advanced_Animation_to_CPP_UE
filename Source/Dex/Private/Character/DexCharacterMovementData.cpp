@@ -106,7 +106,7 @@ void UDexCharacterMovementData::UpdateMovementState(ACharacter* OwningCharacter,
 		} break;
 		case EMovementState::Ragdoll:
 		{
-
+			RagdollUpdate(OwningCharacter, Delta);
 		} break;
 	}
 }
@@ -893,4 +893,52 @@ const bool UDexCharacterMovementData::SetActorLocationAndRotationUpdateTarget(AC
 {
 	TargetRotation = NewRotation;
 	return OwningCharacter->SetActorLocationAndRotation(NewLocation, TargetRotation, bSweep, OutSweepHitResult, bTeleport ? ETeleportType::TeleportPhysics : ETeleportType::None);
+}
+
+void UDexCharacterMovementData::RagdollUpdate(ACharacter* OwningCharacter, const float DeltaTime)
+{
+	if (USkeletalMeshComponent* MeshComp = OwningCharacter->GetMesh())
+	{
+		LastRagdollVelocity = MeshComp->GetPhysicsLinearVelocity(FName(TEXT("root")));
+		const float Spring = DexMathUtility::RangeClamped(LastRagdollVelocity.Size(), 0.f, 1000.f, 0.f, 25000.f);
+		MeshComp->SetAllMotorsAngularDriveParams(Spring, 0.f, 0.f, false);
+		MeshComp->SetEnableGravity(LastRagdollVelocity.Z > -4000.f);
+		SetActorLocationDuringRagdoll(OwningCharacter);
+	}
+}
+
+void UDexCharacterMovementData::SetActorLocationDuringRagdoll(ACharacter* OwningCharacter)
+{
+	FVector TargetRagdollLocation = FVector::ZeroVector;
+	FRotator TargetRagdollRotation = FRotator::ZeroRotator;
+	if (USkeletalMeshComponent* MeshComp = OwningCharacter->GetMesh())
+	{
+		TargetRagdollLocation = MeshComp->GetSocketLocation(FName(TEXT("pelvis")));
+		const FRotator PelvisRotation = MeshComp->GetSocketRotation(FName(TEXT("pelvis")));
+		bRagdollFaceUp = PelvisRotation.Roll < 0.f;
+		TargetRagdollRotation = bRagdollFaceUp ? FRotator(0.f, PelvisRotation.Yaw - 180.f, 0.f) : FRotator(0.f, PelvisRotation.Yaw, 0.f);
+		if (UCapsuleComponent* CapsuleComp = OwningCharacter->GetCapsuleComponent())
+		{
+			if (UWorld* World = OwningCharacter->GetWorld())
+			{
+				FVector End = FVector(TargetRagdollLocation.X, TargetRagdollLocation.Y, TargetRagdollLocation.Z - CapsuleComp->GetScaledCapsuleHalfHeight());
+				FHitResult LineHit;
+				if (World->LineTraceSingleByChannel(LineHit, TargetRagdollLocation, End, ECollisionChannel::ECC_Visibility))
+				{
+					bRagdollOnGround = LineHit.bBlockingHit;
+					if (bRagdollOnGround)
+					{
+						FVector NewLocation = FVector(TargetRagdollLocation.X, TargetRagdollLocation.Y, TargetRagdollLocation.Z + (CapsuleComp->GetScaledCapsuleHalfHeight() - FMath::Abs(LineHit.ImpactPoint.Z - LineHit.TraceStart.Z)) + 2.f);
+						FHitResult None;
+						SetActorLocationAndRotationUpdateTarget(OwningCharacter, NewLocation, TargetRagdollRotation, false, false, &None);
+					}
+					else
+					{
+						FHitResult None;
+						SetActorLocationAndRotationUpdateTarget(OwningCharacter, TargetRagdollLocation, TargetRagdollRotation, false, false, &None);
+					}
+				}
+			}
+		}
+	}
 }
