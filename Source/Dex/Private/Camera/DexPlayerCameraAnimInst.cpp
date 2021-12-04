@@ -43,13 +43,29 @@ void UDexPlayerCameraAnimInst::GetCameraInstanceCurveData(float& CameraOffsetX, 
 {
 	if (CameraInstanceData)
 	{
-		const FCameraInstanceDirectionStateData& CameraInstanceDirectionStateData = CameraInstanceData->RotationCurvesData[static_cast<int>(RotationMode)].StateData[static_cast<int>(Stance)].MovementData[static_cast<int>(LocomotionState)].DirectionData;
-		CameraOffsetX = CameraInstanceDirectionStateData.CameraOffsetX;
-		CameraOffsetY = CameraInstanceDirectionStateData.CameraOffsetY;
-		CameraOffsetZ = CameraInstanceDirectionStateData.CameraOffsetZ;
-		PivotLagSpeedX = CameraInstanceDirectionStateData.PivotLagSpeedX;
-		PivotLagSpeedY = CameraInstanceDirectionStateData.PivotLagSpeedY;
-		PivotLagSpeedZ = CameraInstanceDirectionStateData.PivotLagSpeedZ;
-		RotationLagSpeed = CameraInstanceDirectionStateData.RotationLagSpeed;
+		const int32 RotationIndex = static_cast<int>(RotationMode);
+		const int32 StanceIndex = static_cast<int>(Stance);
+		const int32 LocomotionIndex = static_cast<int>(LocomotionState) - 1;
+
+		if (CameraInstanceData->RotationCurvesData.IsValidIndex(RotationIndex))
+		{
+			FCameraInstanceRotationData A = CameraInstanceData->RotationCurvesData[RotationIndex];
+			if (A.StateData.IsValidIndex(StanceIndex))
+			{
+				FCameraInstanceStanceData B = A.StateData[StanceIndex];
+				if (B.MovementData.IsValidIndex(LocomotionIndex))
+				{
+					FCameraInstanceDirectionStateData C = B.MovementData[LocomotionIndex].DirectionData;
+			
+					CameraOffsetX = C.CameraOffsetX;
+					CameraOffsetY = C.CameraOffsetY;
+					CameraOffsetZ = C.CameraOffsetZ;
+					PivotLagSpeedX = C.PivotLagSpeedX;
+					PivotLagSpeedY = C.PivotLagSpeedY;
+					PivotLagSpeedZ = C.PivotLagSpeedZ;
+					RotationLagSpeed = C.RotationLagSpeed;
+				}
+			}
+		}
 	}
 }

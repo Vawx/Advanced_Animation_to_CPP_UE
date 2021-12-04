@@ -6,6 +6,7 @@
 #include "Curves/CurveFloat.h"
 #include "Curves/CurveVector.h"
 #include "DrawDebugHelpers.h"
+#include "Components/CapsuleComponent.h"
 
 UDexCharacterAnimInst::UDexCharacterAnimInst(const FObjectInitializer& ObjectInitializer) :
 Super(ObjectInitializer)
@@ -203,19 +204,19 @@ void UDexCharacterAnimInst::NativeUpdateAnimation(float DeltaTime)
 					if (UWorld* World = GetWorld())
 					{
 						FVector Start = Capsule->GetComponentLocation();
-						float Z = FMath::Clamp(-4000.f, -200.f);
-						float ZLength = DexMathUtility::RangeClamped(Velocity.Z, -4000.f, 50.f, 2000.f);
+						float Z = FMath::Clamp(Velocity.Z, -4000.f, -200.f);
+						float ZLength = DexMathUtility::RangeClamped(Velocity.Z, 0.f, -4000.f, 50.f, 2000.f);
 						FVector End = FVector(Velocity.X, Velocity.Y, Z);
 						End *= ZLength;
 						End += Start;						
 						FHitResult CapsuleTrace;
-						if (World->SweepSingleByProfile(CapsuleTrace, Start, End, FQuat::Identity, FName(TEXT("")), FCollisionShape::MakeCapsule(Capsule->GetUnscaledCapsuleRadius(), Capsule->GetUnscaledCapsuleHalfHeight()))
+						if (World->SweepSingleByProfile(CapsuleTrace, Start, End, FQuat::Identity, FName(TEXT("Character")), FCollisionShape::MakeCapsule(Capsule->GetUnscaledCapsuleRadius(), Capsule->GetUnscaledCapsuleHalfHeight())))
 						{
 							if (UCharacterMovementComponent* Movement = Character->GetCharacterMovement())
 							{
 								if (Movement->IsWalkable(CapsuleTrace) && CapsuleTrace.bBlockingHit)
 								{
-									float PredictionCurveValue = LandPredictionCurve->FloatCurve(CapsuleTrace.Time);
+									float PredictionCurveValue = LandPredictionCurve->GetFloatValue(CapsuleTrace.Time);
 									LandPrediction = FMath::Lerp(PredictionCurveValue, 0.f, GetCurveValue(FName(TEXT("Mask_LandPrediction"))));
 								}
 								else

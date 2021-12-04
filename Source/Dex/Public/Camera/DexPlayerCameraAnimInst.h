@@ -34,6 +34,9 @@ struct FCameraInstanceDirectionStateData
 	
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "CameraMangerCurveData")
 	float RotationLagSpeed;
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "CameraMangerCurveData")
+	float PivotOffsetZ;
 };
 
 UENUM(BlueprintType)
