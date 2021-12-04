@@ -1,7 +1,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Character/DexMovementData.h"
 
 UENUM()
 enum class EDexLerpInterpolationMode : uint8
@@ -28,13 +27,13 @@ public:
 	static const bool InRangeFloatFloat(float Value, float Min, float Max);	
 	static bool IsByteDifferent(int A, int B);
 	static bool MultiTraceFoundHit(TArray<FHitResult> Hits);
-	static FComponentAndTransform ComponentWorldToLocal(FComponentAndTransform WorldSpace);
-	static FComponentAndTransform ComponentLocalToWorld(FComponentAndTransform LocalSpace);
+	//static FComponentAndTransform ComponentWorldToLocal(FComponentAndTransform WorldSpace);
+	//static FComponentAndTransform ComponentLocalToWorld(FComponentAndTransform LocalSpace);
 	static FTransform TransformMinusTransform(FTransform A, FTransform B);
 	static FTransform TransformPlusTransform(FTransform A, FTransform B);	
 	static FTransform TransformLerp(const FTransform& A, const FTransform& B, float Alpha, EDexLerpInterpolationMode LerpInterpolationMode = EDexLerpInterpolationMode::EulerInterp);
 	static FRotator RotatorLerp(FRotator A, FRotator B, float Alpha, bool bShortestPath);
-	
+	static const float AnimCurveClamped(const UAnimInstance* AnimInst, const FName& CurveName, const float Bias, const float Min, const float Max);
 
 	
 };

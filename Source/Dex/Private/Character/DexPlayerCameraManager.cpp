@@ -25,8 +25,8 @@ void ADexPlayerCameraManager::UpdateViewTargetInternal(FTViewTarget& OutVT, floa
 		ensure(Character->GetController<APlayerController>());
 		const FTransform PivotTarget = Character->GetActorTransform();
 		const FVector FPTarget = Character->GetMesh() ? Character->GetMesh()->GetSocketLocation(TEXT("FP_Target")) : FVector::ZeroVector;
-		const float ThirdPersonFOV = Character->ThirdPersonFOV;
-		const float FirstPersonFOV = Character->FirstPersonFOV;
+		const float ThirdPersonFOV = 90.f;
+		const float FirstPersonFOV = 90.f;
 		TargetCameraRotation = FMath::RInterpTo(GetCameraRotation(), Character->GetController<APlayerController>()->GetControlRotation(), DeltaTime, GetCameraBehaviorParam(TEXT("RotationLagSpeed")));
 		SmoothedPivotPoint.SetLocation(CalculateAxisIndependentLag(SmoothedPivotPoint.GetLocation(), PivotTarget.GetLocation(), FVector(GetCameraBehaviorParam(TEXT("PivotLagSpeed_X")), GetCameraBehaviorParam(TEXT("PivotLagSpeed_Y")), GetCameraBehaviorParam(TEXT("PivotLagSpeed_Z"))), TargetCameraRotation, DeltaTime));
 		SmoothedPivotPoint.SetRotation(PivotTarget.GetRotation());
@@ -40,7 +40,7 @@ void ADexPlayerCameraManager::UpdateViewTargetInternal(FTViewTarget& OutVT, floa
 			ECollisionChannel CollisionChannel = ECollisionChannel::ECC_Camera;
 			if (const USkeletalMeshComponent* CharacterMesh = Character->GetMesh())
 			{
-				TraceOrigin = Character->bRightShoulder ? CharacterMesh->GetSocketLocation(FName(TEXT("TP_CameraTrace_R"))) : CharacterMesh->GetSocketLocation(FName(TEXT("TP_CameraTrace_L")));
+				TraceOrigin = CharacterMesh->GetSocketLocation(FName(TEXT("TP_CameraTrace_R"))); // : CharacterMesh->GetSocketLocation(FName(TEXT("TP_CameraTrace_L")));
 			}
 			else
 			{

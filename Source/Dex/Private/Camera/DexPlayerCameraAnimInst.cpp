@@ -1,12 +1,16 @@
 
 #include "Camera/DexPlayerCameraAnimInst.h"
 #include "Character/DexCharacterBase.h"
-#include "Character/DexCharacterMovementData.h"
 
 UDexPlayerCameraAnimInst::UDexPlayerCameraAnimInst(const FObjectInitializer& ObjectInitializer) :
 Super(ObjectInitializer)
 {
-
+	MovementState = ECharacterMovementState::Grounded;
+	MovementAction = ECharacterMovementAction::None;
+	RotationMode = ECharacterRotationMode::LookingDirection;
+	LocomotionState = ECharacterLocomotionState::Walking;
+	Stance = ECharacterStance::Standing;
+	ViewMode = ECharacterViewMode::ThirdPerson;
 }
 
 void UDexPlayerCameraAnimInst::NativeBeginPlay()
@@ -24,19 +28,14 @@ void UDexPlayerCameraAnimInst::NativeUpdateAnimation(float DeltaSeconds)
 {
 	if (ADexCharacterBase* Character = GetInstancePawn<ADexCharacterBase>())
 	{
-		const UDexCharacterMovementData* Movement = Character->GetMovementData();
-		if (Movement->Gait != EMovementGait::None)
-		{
-			MovementState = Movement->MovementState;
-			MovementAction = Movement->MovementAction;
-			RotationMode = Movement->RotationMode;
-			Gait = Movement->Gait;
-			Stance = Movement->Stance;
-			ViewMode = Movement->ViewMode;
-			bRightShoulder = Character->bRightShoulder;
-		}
+		MovementState = Character->MovementState;
+		MovementAction = Character->MovementAction;
+		RotationMode = Character->RotationMode;
+		LocomotionState = Character->LocomotionState;
+		Stance = Character->CharacterStance;
+		ViewMode = Character->ViewMode;
+		bRightShoulder = true;		
 	}
-	
 	Super::NativeUpdateAnimation(DeltaSeconds);	
 }
 
@@ -44,7 +43,7 @@ void UDexPlayerCameraAnimInst::GetCameraInstanceCurveData(float& CameraOffsetX, 
 {
 	if (CameraInstanceData)
 	{
-		const FCameraInstanceDirectionStateData& CameraInstanceDirectionStateData = CameraInstanceData->RotationCurvesData[static_cast<int>(RotationMode)].StateData[static_cast<int>(Stance)].MovementData[static_cast<int>(Gait)].DirectionData;
+		const FCameraInstanceDirectionStateData& CameraInstanceDirectionStateData = CameraInstanceData->RotationCurvesData[static_cast<int>(RotationMode)].StateData[static_cast<int>(Stance)].MovementData[static_cast<int>(LocomotionState)].DirectionData;
 		CameraOffsetX = CameraInstanceDirectionStateData.CameraOffsetX;
 		CameraOffsetY = CameraInstanceDirectionStateData.CameraOffsetY;
 		CameraOffsetZ = CameraInstanceDirectionStateData.CameraOffsetZ;

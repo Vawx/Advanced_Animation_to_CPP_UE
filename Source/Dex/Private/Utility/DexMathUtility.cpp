@@ -1,5 +1,6 @@
 #include "Utility/DexMathUtility.h"
 #include "Math/DualQuat.h"
+#include "Animation/AnimInstance.h"
 
 // Delta Rot
 const FRotator DexMathUtility::NormalizedRotators(const FRotator& A, const FRotator& B)
@@ -42,6 +43,7 @@ bool DexMathUtility::MultiTraceFoundHit(TArray<FHitResult> Hits)
 	return Hits.Num() > 0;
 }
 
+/*
 FComponentAndTransform DexMathUtility::ComponentWorldToLocal(FComponentAndTransform WorldSpace)
 {
 	FComponentAndTransform Result = {};
@@ -74,6 +76,7 @@ FComponentAndTransform DexMathUtility::ComponentLocalToWorld(FComponentAndTransf
 	}
 	return Result;
 }
+*/
 
 FTransform DexMathUtility::TransformMinusTransform(FTransform A, FTransform B)
 {
@@ -182,4 +185,11 @@ FRotator DexMathUtility::RotatorLerp(FRotator A, FRotator B, float Alpha, bool b
 	
 	const FRotator DeltaAngle = B - A;
 	return A + Alpha*DeltaAngle;
+}
+
+const float DexMathUtility::AnimCurveClamped(const UAnimInstance* AnimInst, const FName& CurveName, const float Bias, const float Min, const float Max)
+{
+	float A = AnimInst->GetCurveValue(CurveName);
+	float B = A + Bias;
+	return FMath::Clamp(B, Min, Max);
 }

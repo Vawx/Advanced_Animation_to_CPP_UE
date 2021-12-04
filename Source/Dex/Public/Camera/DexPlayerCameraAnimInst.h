@@ -4,7 +4,6 @@
 #include "Animation/AnimInstance.h"
 #include "Engine/DataTable.h"
 #include "UObject/WeakObjectPtrTemplates.h"
-#include "Character/DexMovementData.h"
 #include "Character/DexPlayerCameraManager.h"
 #include "Character/DexCharacterBase.h"
 #include "UObject/SoftObjectPtr.h"
@@ -118,23 +117,24 @@ class DEX_API UDexPlayerCameraAnimInst : public UAnimInstance
 
 public:
 
+	
 	UPROPERTY(BlueprintReadOnly, Category = "CameraAnimInstance")
-	EMovementState MovementState;
+	ECharacterMovementState MovementState;
 	
 	UPROPERTY(BlueprintReadOnly, Category = "CameraAnimInstance")		
-	EMovementAction MovementAction;
+	ECharacterMovementAction MovementAction;
 	
 	UPROPERTY(BlueprintReadOnly, Category = "CameraAnimInstance")		
-	ERotationMode RotationMode;
+	ECharacterRotationMode RotationMode;
 	
 	UPROPERTY(BlueprintReadOnly, Category = "CameraAnimInstance")		
-	EMovementGait Gait;
+	ECharacterLocomotionState LocomotionState;
 	
 	UPROPERTY(BlueprintReadOnly, Category = "CameraAnimInstance")		
-	EStance Stance;
+	ECharacterStance Stance;
 	
 	UPROPERTY(BlueprintReadOnly, Category = "CameraAnimInstance")		
-	EViewMode ViewMode;
+	ECharacterViewMode ViewMode;
 	
 	UPROPERTY(BlueprintReadOnly, Category = "CameraAnimInstance")		
 	bool bRightShoulder;
