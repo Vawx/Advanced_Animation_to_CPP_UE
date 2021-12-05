@@ -6,6 +6,7 @@
 #include "UObject/SoftObjectPtr.h"
 #include "Engine/DataTable.h"
 #include "DexTimelineNative.h"
+#include "Ability/DexAbilitySystemInterface.h"
 #include "DexCharacterBase.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogDexCharacter, Log, All);
@@ -16,6 +17,7 @@ class UAnimMontage;
 class UCapsuleComponent;
 class UCurveFloat;
 class UCurveVector;
+class UDexAbilitySystemComponent;
 
 UENUM(BlueprintType)
 enum class ECharacterViewMode : uint8
@@ -64,6 +66,24 @@ enum class ECharacterLocomotionState : uint8
 	Walking,
 	Running, 
 	Sprinting
+};
+
+UENUM(BlueprintType)
+enum class ECharacterOverlayState : uint8
+{
+	Default,
+	Masculine,
+	Feminine, 
+	Inured,
+	HandsTied,
+	Rifle,
+	Pistol,
+	Pistol_2H,
+	Bow,
+	Torch,
+	Binoculars,
+	Box,
+	Barrel,
 };
 
 USTRUCT(BlueprintType)
@@ -166,9 +186,8 @@ public:
 	FCharacterMovementSettingsStance AimingDirection;	
 };
 
-
 UCLASS()
-class DEX_API ADexCharacterBase : public ACharacter
+class DEX_API ADexCharacterBase : public ACharacter, public IDexAbilitySystemInterface
 {
 	GENERATED_UCLASS_BODY()
 
@@ -176,7 +195,9 @@ public:
 
 	UPROPERTY(BlueprintReadOnly, Category = "DVCharacter|Input")
 	FDexCharacterRuntimeInputData CharacterRuntimeInputData;
-	
+
+	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; }
+		
 protected:	
 
 	// actor virtuals
@@ -186,6 +207,8 @@ protected:
 	virtual void OnJumped_Implementation() override;
 	virtual void Landed(const FHitResult& Hit) override;
 	virtual void OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode = 0) override;
+	virtual void OnRep_PlayerState() override;
+	virtual void PossessedBy(AController* C);
 
 	// input
 	void Forward(const float Amount);
@@ -193,6 +216,7 @@ protected:
 	void Look(const float Amount);
 	void Up(const float Amount);
 	void Sprint();
+	void Roll();	
 	void PlayerInputMovement(bool bForward);
 	void FixDiagonalGameplayValues(float& YOut, float& XOut);
 	float MovementInputAmount();
@@ -222,14 +246,29 @@ protected:
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "DVCharacter|Input")
 	FDataTableRowHandle MovementModelData;
 
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "DVCharacter|Input")
+	UAnimMontage* RollDefault;
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "DVCharacter|Input")	
+	UAnimMontage* LandRoll_RH;
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "DVCharacter|Input")
+	UAnimMontage* LandRoll_LH;
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "DVCharacter|Input")
+	UAnimMontage* LandRoll_2H;	
+
 	FRotator TargetRotation;
 	FRotator LastVelocityRotation;
 	FRotator LastMovementInputRotation;
 
 	float LastDeltaTime;
+	float RollAttemptTime;
+	float JumpInitiatedTime;
 
 	// util
 	float GetAnimCurveValue(const FName& Name);
+	UAnimMontage* GetRollAnimation();
 
 	template<class T>
 	T* GetAnimInstance() 
@@ -240,6 +279,28 @@ protected:
 		}
 		return nullptr;
 	}
+
+	template<class T>
+	T* GetState()
+	{
+		if (APlayerState* State = GetPlayerState())
+		{
+			return Cast<T>(State);
+		}
+		return nullptr;
+	}
+
+	template<class T>
+	T* GetAbilutyComponent()
+	{
+		return Cast<T>(GetAbilitySystemComponent());
+	}
+
+	// ability
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Ability")
+	UDexAbilitySystemComponent* AbilitySystemComponent;
+
+	void InitAbilityComponent();
 
 public:
 
@@ -263,6 +324,7 @@ public:
 	ECharacterRotationMode RotationMode;
 	ECharacterRotationMode DesiredRotationMode;
 	ECharacterMovementAction MovementAction;
+	ECharacterOverlayState OverlayState;
 
 	FCharacterMovementSettings CharacterMovementSettings;
 	FCharacterMovementSettingsState* CharacterMovementStateData;

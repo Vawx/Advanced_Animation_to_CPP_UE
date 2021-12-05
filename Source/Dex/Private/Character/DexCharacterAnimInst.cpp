@@ -232,6 +232,19 @@ void UDexCharacterAnimInst::NativeUpdateAnimation(float DeltaTime)
 			{
 				LandPrediction = 0.f;
 			}
+
+			// In air lean
+			if (LeanInAirCurve)
+			{
+				FRotator CharRotation = Character->GetActorRotation();
+				FVector VelUnrotated = CharRotation.UnrotateVector(Velocity);
+				FVector VelUnrotatedDivisor = VelUnrotated / 350.f;
+				FVector2D A = FVector2D(VelUnrotatedDivisor.Y, VelUnrotatedDivisor.X);
+				float LeanInAirCurveValue = LeanInAirCurve->GetFloatValue(FallSpeed);
+				FVector2D B = A * LeanInAirCurveValue;
+				LeanAmount.LR = B.X;
+				LeanAmount.FB = B.Y;
+			}
 		}
 	}
 

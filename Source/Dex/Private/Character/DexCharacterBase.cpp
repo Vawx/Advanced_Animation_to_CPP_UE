@@ -1,4 +1,5 @@
 #include "Character/DexCharacterBase.h"
+#include "Character/DexPlayerStateBase.h"
 #include "Utility/DexMathUtility.h"
 #include "DrawDebugHelpers.h"
 #include "Curves/CurveVector.h"
@@ -79,6 +80,13 @@ void ADexCharacterBase::SetupPlayerInputComponent(UInputComponent* PIC)
 		PIC->BindAction(TEXT("Jump"), IE_Pressed, this, &ACharacter::Jump);		
 		PIC->BindAction(TEXT("Sprint"), IE_Pressed, this, &ADexCharacterBase::Sprint);
 		PIC->BindAction(TEXT("Sprint"), IE_Released, this, &ADexCharacterBase::Sprint);
+		
+		PIC->BindAction(TEXT("Roll"), IE_Pressed, this, &ADexCharacterBase::Roll);
+	}
+
+	if (ensure(AbilitySystemComponent))
+	{
+		AbilitySystemComponent->BindToInputComponent(PIC);
 	}
 
 	Super::SetupPlayerInputComponent(PIC);
@@ -135,6 +143,53 @@ float ADexCharacterBase::GetAnimCurveValue(const FName& Name)
 	return false;
 }
 
+UAnimMontage* ADexCharacterBase::GetRollAnimation()
+{
+	switch (OverlayState)
+	{
+		case ECharacterOverlayState::Default:
+		case ECharacterOverlayState::Masculine:
+		case ECharacterOverlayState::Feminine:
+		{
+			return RollDefault;
+		} break;
+		case ECharacterOverlayState::Inured:
+		case ECharacterOverlayState::Bow:
+		case ECharacterOverlayState::Torch:
+		case ECharacterOverlayState::Barrel:
+		{
+			return LandRoll_LH;
+		} break;
+		case ECharacterOverlayState::HandsTied:
+		case ECharacterOverlayState::Pistol:
+		case ECharacterOverlayState::Pistol_2H:
+		{
+			return LandRoll_2H;
+		} break;
+		case ECharacterOverlayState::Rifle:
+		case ECharacterOverlayState::Binoculars:
+		case ECharacterOverlayState::Box:
+		{
+			return LandRoll_RH;
+		} break;
+	}
+	return nullptr;
+}
+
+void ADexCharacterBase::InitAbilityComponent()
+{
+	if (ADexPlayerStateBase* State = GetState<ADexPlayerStateBase>())
+	{
+		if (State->AbilitySystemComponent == AbilitySystemComponent)
+		{
+			return;
+		}
+
+		AbilitySystemComponent = State->AbilitySystemComponent;
+		AbilitySystemComponent->SetAvatarActor(this);
+	}
+}
+
 void ADexCharacterBase::Forward(const float Amount)
 {
 	CharacterRuntimeInputData.ForwardAxisAmount = Amount;
@@ -170,6 +225,34 @@ void ADexCharacterBase::Sprint()
 	else
 	{
 		DesiredLocomotionState = ECharacterLocomotionState::Running;
+	}
+}
+
+void ADexCharacterBase::Roll()
+{
+	if (MovementState == ECharacterMovementState::Grounded)
+	{
+		if (UDexCharacterAnimInst* AnimInst = GetAnimInstance<UDexCharacterAnimInst>())
+		{
+			if (UAnimMontage* Montage = GetRollAnimation())
+			{
+				RollAttemptTime = 0.f;
+				JumpInitiatedTime = 0.f;
+				float VelocityLength = VelocityXY.Size();
+				float PlayRate = DexMathUtility::RangeClamped(VelocityLength, 0.f, 600.f, 0.9f, 1.8f);
+				AnimInst->Montage_Play(Montage, PlayRate, EMontagePlayReturnType::MontageLength, 0.f, true);
+			}
+		} 	
+	}
+
+	if (MovementState == ECharacterMovementState::InAir)
+	{
+		if (UWorld* World = GetWorld())
+		{
+			RollAttemptTime = 0.f;
+			JumpInitiatedTime = 0.f;
+			RollAttemptTime = World->GetTimeSeconds();
+		}
 	}
 }
 
@@ -339,6 +422,19 @@ void ADexCharacterBase::Landed(const FHitResult& Hit)
 	Super::Landed(Hit);
 
 	MovementState = ECharacterMovementState::Grounded;	
+
+	float FallSplit = 0.f;
+	if (UWorld* World = GetWorld())
+	{
+		float FallTime = World->GetTimeSeconds();
+		FallSplit = FallTime - JumpInitiatedTime;
+
+	}
+
+	if (!FMath::IsNearlyZero(RollAttemptTime) || FallSplit > 1.25f)
+	{
+		Roll();
+	}
 }
 
 
@@ -355,6 +451,7 @@ void ADexCharacterBase::OnJumped_Implementation()
 
 	if (UWorld* World = GetWorld())
 	{
+		JumpInitiatedTime = World->GetTimeSeconds();
 		FTimerManager& TimerManger = World->GetTimerManager();
 		FTimerHandle None;
 		TimerManger.SetTimer(None, FTimerDelegate::CreateLambda(ResetJump), 0.5f, false, 0.f);		
@@ -391,6 +488,22 @@ void ADexCharacterBase::OnMovementModeChanged(EMovementMode PrevMovementMode, ui
 		}	
 	}
 	
+}
+
+void ADexCharacterBase::OnRep_PlayerState()
+{
+	Super::OnRep_PlayerState();
+	InitAbilityComponent();	
+}
+
+void ADexCharacterBase::PossessedBy(AController* C)
+{
+	Super::PossessedBy(C);
+	if (ADexPlayerStateBase* State = GetState<ADexPlayerStateBase>())
+	{
+		SetPlayerState(State);
+		InitAbilityComponent();
+	}
 }
 
 ECharacterLocomotionState ADexCharacterBase::AllowedLocomotionState()

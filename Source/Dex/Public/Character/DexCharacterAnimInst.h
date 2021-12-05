@@ -228,7 +228,10 @@ public:
 	UCurveVector* YawOffsetLeftRight;	
 
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Animation State Data")					
-	UCurveFloat* LandPredictionCurve;			
+	UCurveFloat* LandPredictionCurve;	
+	
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Animation State Data")					
+	UCurveFloat* LeanInAirCurve;	
 
 	UPROPERTY(BlueprintReadOnly, Category = "Animation State Data")			
 	float WalkRunBlend;
