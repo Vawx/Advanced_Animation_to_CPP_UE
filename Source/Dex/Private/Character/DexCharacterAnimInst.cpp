@@ -156,7 +156,7 @@ void UDexCharacterAnimInst::NativeUpdateAnimation(float DeltaTime)
 								}
 								else
 								{
-									TurnInPlaceAsset = TurnInPlaceLeft180;									
+									TurnInPlaceAsset = TurnInPlaceRight180;
 								}
 							}
 
@@ -194,7 +194,7 @@ void UDexCharacterAnimInst::NativeUpdateAnimation(float DeltaTime)
 		}
 		else if (MovementState == ECharacterMovementState::InAir)
 		{
-			FallSpeed = FMath::Abs(Character->Velocity.Z);		
+			FallSpeed = Character->Velocity.Z;
 			
 			// Landing prediction
 			if (FallSpeed < -200.f && LandPredictionCurve != nullptr)
@@ -209,8 +209,13 @@ void UDexCharacterAnimInst::NativeUpdateAnimation(float DeltaTime)
 						FVector End = FVector(Velocity.X, Velocity.Y, Z);
 						End *= ZLength;
 						End += Start;						
-						FHitResult CapsuleTrace;
-						if (World->SweepSingleByProfile(CapsuleTrace, Start, End, FQuat::Identity, FName(TEXT("Character")), FCollisionShape::MakeCapsule(Capsule->GetUnscaledCapsuleRadius(), Capsule->GetUnscaledCapsuleHalfHeight())))
+#if DEXCHARACTER_ANIMINST_DEBUG_LAND_PREDICTION
+						DrawDebugCapsule(World, Capsule->GetComponentLocation(), Capsule->GetUnscaledCapsuleHalfHeight(), Capsule->GetUnscaledCapsuleRadius(), FQuat::Identity, FColor::Red, false, LastDelta * 3.f);
+#endif
+						FCollisionQueryParams Params;						
+						Params.AddIgnoredActor(Character);
+						FHitResult CapsuleTrace;						
+						if (World->SweepSingleByProfile(CapsuleTrace, Start, End, FQuat::Identity, FName(TEXT("Character")), FCollisionShape::MakeCapsule(Capsule->GetUnscaledCapsuleRadius(), Capsule->GetUnscaledCapsuleHalfHeight()), Params))
 						{
 							if (UCharacterMovementComponent* Movement = Character->GetCharacterMovement())
 							{
@@ -218,6 +223,10 @@ void UDexCharacterAnimInst::NativeUpdateAnimation(float DeltaTime)
 								{
 									float PredictionCurveValue = LandPredictionCurve->GetFloatValue(CapsuleTrace.Time);
 									LandPrediction = FMath::Lerp(PredictionCurveValue, 0.f, GetCurveValue(FName(TEXT("Mask_LandPrediction"))));
+#if DEXCHARACTER_ANIMINST_DEBUG_LAND_PREDICTION
+									DrawDebugCapsule(World, CapsuleTrace.ImpactPoint, Capsule->GetUnscaledCapsuleHalfHeight(), Capsule->GetUnscaledCapsuleRadius(), FQuat::Identity, FColor::Red, false, LastDelta * 3.f);
+									
+#endif
 								}
 								else
 								{

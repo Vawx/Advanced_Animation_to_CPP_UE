@@ -291,7 +291,7 @@ protected:
 	}
 
 	template<class T>
-	T* GetAbilutyComponent()
+	T* GetAbilityComponent()
 	{
 		return Cast<T>(GetAbilitySystemComponent());
 	}
@@ -299,6 +299,9 @@ protected:
 	// ability
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Ability")
 	UDexAbilitySystemComponent* AbilitySystemComponent;
+
+	UFUNCTION(BlueprintPure, Category = "Ability", meta = (DisplayName="GetDexAbilitySystemComponent"))
+	UDexAbilitySystemComponent* GetAbilitySystemComponent_K2();
 
 	void InitAbilityComponent();
 

@@ -8,9 +8,16 @@ public class Dex : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "GameplayAbilities", "GameplayTags", "GameplayTasks", "AnimGraphRuntime", "AnimationModifiers" });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "AnimGraphRuntime", "AnimationModifiers" });
 
-		PrivateDependencyModuleNames.AddRange(new string[] {  });
+
+		PrivateDependencyModuleNames.AddRange(new string[] {
+			"GameplayAbilities",
+			"GameplayAbilitiesEditor",
+			"GameplayTags",
+			"GameplayTagsEditor",
+			"GameplayTasks"
+		});
 
 		// Uncomment if you are using Slate UI
 		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });

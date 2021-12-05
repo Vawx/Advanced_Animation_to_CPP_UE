@@ -7,6 +7,7 @@
 
 #define DEXCHARACTER_ANIMINST_DEBUG_IK 0
 #define DEXCHARACTER_ANIMINST_DEBUG_LOCK_OFFSET 0
+#define DEXCHARACTER_ANIMINST_DEBUG_LAND_PREDICTION 0
 
 class UCurveVector;
 class UCurveFloat;
@@ -344,7 +345,7 @@ protected:
 	FTurnInPlaceAsset TurnInPlaceLeft180;
 
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Animation State Data")			
-	FTurnInPlaceAsset TurnInPlaceRight190;
+	FTurnInPlaceAsset TurnInPlaceRight180;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Animation State Data")			
 	FVelocityBlend VelocityBlend;

@@ -176,6 +176,11 @@ UAnimMontage* ADexCharacterBase::GetRollAnimation()
 	return nullptr;
 }
 
+UDexAbilitySystemComponent* ADexCharacterBase::GetAbilitySystemComponent_K2()
+{
+	return GetAbilityComponent<UDexAbilitySystemComponent>();
+}
+
 void ADexCharacterBase::InitAbilityComponent()
 {
 	if (ADexPlayerStateBase* State = GetState<ADexPlayerStateBase>())
