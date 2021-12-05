@@ -205,7 +205,7 @@ void UDexCharacterAnimInst::NativeUpdateAnimation(float DeltaTime)
 					{
 						FVector Start = Capsule->GetComponentLocation();
 						float Z = FMath::Clamp(Velocity.Z, -4000.f, -200.f);
-						float ZLength = DexMathUtility::RangeClamped(Velocity.Z, 0.f, -4000.f, 50.f, 2000.f);
+						float ZLength = DexMathUtility::RangeClamped(Velocity.Z, 0.f, -4000.f, 50.f, 2000.f); 
 						FVector End = FVector(Velocity.X, Velocity.Y, Z);
 						End *= ZLength;
 						End += Start;						
