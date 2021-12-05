@@ -7,6 +7,7 @@
 #include "Engine/DataTable.h"
 #include "DexTimelineNative.h"
 #include "Ability/DexAbilitySystemInterface.h"
+#include "Ability/DexAbilitySet.h"
 #include "DexCharacterBase.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogDexCharacter, Log, All);
@@ -84,6 +85,15 @@ enum class ECharacterOverlayState : uint8
 	Binoculars,
 	Box,
 	Barrel,
+	RocketLauncher,
+	GrenadeLauncher,
+};
+
+UENUM(BlueprintType)
+enum class ECharacterGroundedEntryState : uint8
+{
+	None,
+	Role,
 };
 
 USTRUCT(BlueprintType)
@@ -193,11 +203,14 @@ class DEX_API ADexCharacterBase : public ACharacter, public IDexAbilitySystemInt
 
 public:
 
-	UPROPERTY(BlueprintReadOnly, Category = "DVCharacter|Input")
+	UPROPERTY(BlueprintReadOnly, Category = "DexCharacter|Input")
 	FDexCharacterRuntimeInputData CharacterRuntimeInputData;
 
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystemComponent; }
-		
+	
+	bool Roll();	
+	void Sprint();
+	
 protected:	
 
 	// actor virtuals
@@ -215,8 +228,7 @@ protected:
 	void Right(const float Amount);
 	void Look(const float Amount);
 	void Up(const float Amount);
-	void Sprint();
-	void Roll();	
+	void Aim();	
 	void PlayerInputMovement(bool bForward);
 	void FixDiagonalGameplayValues(float& YOut, float& XOut);
 	float MovementInputAmount();
@@ -243,19 +255,22 @@ protected:
 	bool SetMovementModel();
 	void SetFrameTimeData();
 	
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "DVCharacter|Input")
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "DexCharacter|Input")
+	UDexAbilitySet* DefaultAbilitySet;
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "DexCharacter|Input")
 	FDataTableRowHandle MovementModelData;
 
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "DVCharacter|Input")
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "DexCharacter|Input")
 	UAnimMontage* RollDefault;
 
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "DVCharacter|Input")	
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "DexCharacter|Input")	
 	UAnimMontage* LandRoll_RH;
 
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "DVCharacter|Input")
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "DexCharacter|Input")
 	UAnimMontage* LandRoll_LH;
 
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "DVCharacter|Input")
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "DexCharacter|Input")
 	UAnimMontage* LandRoll_2H;	
 
 	FRotator TargetRotation;
@@ -328,6 +343,7 @@ public:
 	ECharacterRotationMode DesiredRotationMode;
 	ECharacterMovementAction MovementAction;
 	ECharacterOverlayState OverlayState;
+	ECharacterGroundedEntryState GroundedEntryState;
 
 	FCharacterMovementSettings CharacterMovementSettings;
 	FCharacterMovementSettingsState* CharacterMovementStateData;

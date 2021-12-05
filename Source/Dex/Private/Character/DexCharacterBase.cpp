@@ -45,6 +45,11 @@ void ADexCharacterBase::BeginPlay()
 	TargetRotation = ActorRot;
 	LastVelocityRotation = ActorRot;
 	LastMovementInputRotation = ActorRot;
+
+	if (ensure(AbilitySystemComponent) && DefaultAbilitySet)
+	{
+		DefaultAbilitySet->GiveAbilities(AbilitySystemComponent);
+	}
 }
 
 void ADexCharacterBase::Tick(float DeltaTime)
@@ -80,14 +85,15 @@ void ADexCharacterBase::SetupPlayerInputComponent(UInputComponent* PIC)
 		PIC->BindAction(TEXT("Jump"), IE_Pressed, this, &ACharacter::Jump);		
 		PIC->BindAction(TEXT("Sprint"), IE_Pressed, this, &ADexCharacterBase::Sprint);
 		PIC->BindAction(TEXT("Sprint"), IE_Released, this, &ADexCharacterBase::Sprint);
-		
-		PIC->BindAction(TEXT("Roll"), IE_Pressed, this, &ADexCharacterBase::Roll);
+		PIC->BindAction(TEXT("Aim"), IE_Pressed, this, &ADexCharacterBase::Aim);
+		PIC->BindAction(TEXT("Aim"), IE_Released, this, &ADexCharacterBase::Aim);
 	}
 
 	if (ensure(AbilitySystemComponent))
 	{
-		AbilitySystemComponent->BindToInputComponent(PIC);
-	}
+		FGameplayAbilityInputBinds AbilityBind(TEXT("AbilityActivate"), TEXT("AbilityCancel"), TEXT("EAbilityInputBinds"), EAbilityInputBinds::KeyOne);
+		AbilitySystemComponent->BindAbilityActivationToInputComponent(PIC, AbilityBind);
+	} 
 
 	Super::SetupPlayerInputComponent(PIC);
 }
@@ -219,6 +225,21 @@ void ADexCharacterBase::Up(const float Amount)
 	AddControllerPitchInput(Amount);	
 }
 
+void ADexCharacterBase::Aim()
+{
+	static bool bToggle = false;
+	bToggle = !bToggle;
+	if (bToggle)
+	{
+		RotationMode = ECharacterRotationMode::AimingDirection;
+	}
+	else
+	{
+		RotationMode = DesiredRotationMode;
+	}
+
+}
+
 void ADexCharacterBase::Sprint()
 {
 	static bool bToggled = false;
@@ -233,7 +254,7 @@ void ADexCharacterBase::Sprint()
 	}
 }
 
-void ADexCharacterBase::Roll()
+bool ADexCharacterBase::Roll()
 {
 	if (MovementState == ECharacterMovementState::Grounded)
 	{
@@ -246,6 +267,7 @@ void ADexCharacterBase::Roll()
 				float VelocityLength = VelocityXY.Size();
 				float PlayRate = DexMathUtility::RangeClamped(VelocityLength, 0.f, 600.f, 0.9f, 1.8f);
 				AnimInst->Montage_Play(Montage, PlayRate, EMontagePlayReturnType::MontageLength, 0.f, true);
+				return true;
 			}
 		} 	
 	}
@@ -259,6 +281,7 @@ void ADexCharacterBase::Roll()
 			RollAttemptTime = World->GetTimeSeconds();
 		}
 	}
+	return false;
 }
 
 void ADexCharacterBase::PlayerInputMovement(bool bForward)
@@ -527,7 +550,7 @@ ECharacterLocomotionState ADexCharacterBase::AllowedLocomotionState()
 	{
 		if (RotationMode == ECharacterRotationMode::AimingDirection)
 		{
-			return AimingCrouchingFallback();
+			return DesiredLocomotionState;
 		}
 
 		if (DesiredLocomotionState == ECharacterLocomotionState::Walking ||

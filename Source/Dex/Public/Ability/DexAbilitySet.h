@@ -10,11 +10,15 @@ namespace EAbilityInputBinds
 {
 	enum Type
 	{
-		AbilityOne UMETA(DisplayName = "Ability One"),  
-		AbilityTwo UMETA(DisplayName = "Ability Two"),
-		AbilityThree UMETA(DisplayName = "Ability Three"),
-		AbilityFour UMETA(DisplayName = "Ability Four"),
-		AbilityFive UMETA(DisplayName = "Ability Five"),
+		KeyOne,  
+		KeyTwo,
+		KeyThree,
+		KeyFour,
+		KeyFive,
+		LeftMouseButton,
+		LeftAlt,
+		LeftShift,
+		AbilityNine,
 	};
 }
 

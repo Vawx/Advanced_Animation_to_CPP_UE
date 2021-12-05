@@ -5,9 +5,9 @@
 #include "Character/DexCharacterBase.h"
 #include "DexCharacterAnimInst.generated.h"
 
-#define DEXCHARACTER_ANIMINST_DEBUG_IK 0
-#define DEXCHARACTER_ANIMINST_DEBUG_LOCK_OFFSET 0
-#define DEXCHARACTER_ANIMINST_DEBUG_LAND_PREDICTION 0
+#define DexCHARACTER_ANIMINST_DEBUG_IK 0
+#define DexCHARACTER_ANIMINST_DEBUG_LOCK_OFFSET 0
+#define DexCHARACTER_ANIMINST_DEBUG_LAND_PREDICTION 0
 
 class UCurveVector;
 class UCurveFloat;
@@ -207,6 +207,12 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "CameraAnimInstance")		
 	ECharacterViewMode ViewMode;
 
+	UPROPERTY(BlueprintReadOnly, Category = "CameraAnimInstance")			
+	ECharacterOverlayState OverlayState;	
+
+	UPROPERTY(BlueprintReadOnly, Category = "CameraAnimInstance")				
+	ECharacterGroundedEntryState GroundedEntryState;
+
 	UPROPERTY(BlueprintReadOnly, Category = "Animation State Data")		
 	FVector Velocity;
 
@@ -328,8 +334,12 @@ public:
 	float PelvisAlpha;
 
 	void Jumped();
+
+	void SetOverrideState(const int32 Override) { OverlayOverrideState = Override; }
 	 
 protected:
+
+	int OverlayOverrideState;
 
 	float LastDelta;
 

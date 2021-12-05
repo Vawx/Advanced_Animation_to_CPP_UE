@@ -21,6 +21,7 @@ Super(ObjectInitializer)
 	RotationMode = ECharacterRotationMode::LookingDirection;
 
 	BasePoseNormal = 1.f;
+	OverlayOverrideState = 0;
 }
 
 void UDexCharacterAnimInst::NativeBeginPlay()
@@ -40,6 +41,7 @@ void UDexCharacterAnimInst::NativeUpdateAnimation(float DeltaTime)
 		Speed = Velocity.Size();
 		MovementState = Character->MovementState;
 		LocomotionState = Character->LocomotionState;
+		OverlayState = Character->OverlayState;
 		bHasMovementInput = Character->bHasMovementInput;
 		bIsMoving = Character->bIsMoving;
 		PreviousMovementState = Character->PreviousMovementState;
@@ -209,7 +211,7 @@ void UDexCharacterAnimInst::NativeUpdateAnimation(float DeltaTime)
 						FVector End = FVector(Velocity.X, Velocity.Y, Z);
 						End *= ZLength;
 						End += Start;						
-#if DEXCHARACTER_ANIMINST_DEBUG_LAND_PREDICTION
+#if DexCHARACTER_ANIMINST_DEBUG_LAND_PREDICTION
 						DrawDebugCapsule(World, Capsule->GetComponentLocation(), Capsule->GetUnscaledCapsuleHalfHeight(), Capsule->GetUnscaledCapsuleRadius(), FQuat::Identity, FColor::Red, false, LastDelta * 3.f);
 #endif
 						FCollisionQueryParams Params;						
@@ -223,7 +225,7 @@ void UDexCharacterAnimInst::NativeUpdateAnimation(float DeltaTime)
 								{
 									float PredictionCurveValue = LandPredictionCurve->GetFloatValue(CapsuleTrace.Time);
 									LandPrediction = FMath::Lerp(PredictionCurveValue, 0.f, GetCurveValue(FName(TEXT("Mask_LandPrediction"))));
-#if DEXCHARACTER_ANIMINST_DEBUG_LAND_PREDICTION
+#if DexCHARACTER_ANIMINST_DEBUG_LAND_PREDICTION
 									DrawDebugCapsule(World, CapsuleTrace.ImpactPoint, Capsule->GetUnscaledCapsuleHalfHeight(), Capsule->GetUnscaledCapsuleRadius(), FQuat::Identity, FColor::Red, false, LastDelta * 3.f);
 									
 #endif
@@ -616,7 +618,7 @@ void UDexCharacterAnimInst::UpdateFeet()
 	Foot(Enable_FootIK_L, FootLock_L, ik_foot_l, FootLockLLocation, FootLockLRotation, FootLockLAlpha);
 	Foot(Enable_FootIK_R, FootLock_R, ik_foot_r, FootLockRLocation, FootLockRRotation, FootLockRAlpha);
 
-#if DEXCHARACTER_ANIMINST_DEBUG_LOCK_OFFSET
+#if DexCHARACTER_ANIMINST_DEBUG_LOCK_OFFSET
 	if (UWorld* World = GetWorld())
 	{
 		FTransform Left = OwningComp->GetSocketTransform(FName(TEXT("ik_foot_l")), ERelativeTransformSpace::RTS_World);
@@ -729,7 +731,7 @@ void UDexCharacterAnimInst::UpdateFeet()
 		DoOffset(Enable_FootIK_L, ik_foot_l, root, FootOffsetLTarget, FootOffsetLLocation, FootOffsetLRotation);
 		DoOffset(Enable_FootIK_R, ik_foot_r, root, FootOffsetRTarget, FootOffsetRLocation, FootOffsetRRotation);	
 		
-#if DEXCHARACTER_ANIMINST_DEBUG_LOCK_OFFSET
+#if DexCHARACTER_ANIMINST_DEBUG_LOCK_OFFSET
 		if (UWorld* World = GetWorld())
 		{
 			FVector Left = OwningComp->GetSocketLocation(FName(TEXT("VB ik_foot_l_Offset")));
@@ -741,7 +743,7 @@ void UDexCharacterAnimInst::UpdateFeet()
 
 		SetPelvisOffset(FootOffsetLTarget, FootOffsetRTarget);
 
-#if DEXCHARACTER_ANIMINST_DEBUG_LOCK_OFFSET
+#if DexCHARACTER_ANIMINST_DEBUG_LOCK_OFFSET
 		if (UWorld* World = GetWorld())
 		{
 			FVector Start = OwningComp->GetSocketLocation(FName(TEXT("Pelvis")));
@@ -759,7 +761,7 @@ void UDexCharacterAnimInst::UpdateFeet()
 		FootOffsetRRotation = FMath::RInterpTo(FootOffsetRRotation, FRotator::ZeroRotator, LastDelta, 15.f);		
 	}
 
-#if DEXCHARACTER_ANIMINST_DEBUG_IK
+#if DexCHARACTER_ANIMINST_DEBUG_IK
 	if (UWorld* World = GetWorld())
 	{
 		FVector ik_foot_r_offset = OwningComp->GetSocketLocation(FName(TEXT("VB ik_foot_r_offset")));
