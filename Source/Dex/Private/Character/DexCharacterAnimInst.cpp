@@ -191,6 +191,41 @@ void UDexCharacterAnimInst::NativeUpdateAnimation(float DeltaTime)
 				// Dynamic transitions
 				if (FMath::IsNearlyEqual(EnableTransitionValue, 1.f))
 				{
+					auto GetSocketDistance = [&](const FName& SocketOrBoneNameA, const FName& SocketOrBoneNameB, USkeletalMeshComponent* Component)
+					{
+						if (Component && SocketOrBoneNameA != NAME_None && SocketOrBoneNameB != NAME_None)
+						{
+							FTransform SocketTransformA = Component->GetSocketTransform(SocketOrBoneNameA, ERelativeTransformSpace::RTS_Component);
+							FTransform SocketTransformB = Component->GetSocketTransform(SocketOrBoneNameB, ERelativeTransformSpace::RTS_Component);
+							
+							float Distance = (SocketTransformB.GetLocation() - SocketTransformA.GetLocation()).Size();
+							return Distance;
+						}						
+						return 0.f;
+					};
+
+					if (USkeletalMeshComponent* Comp = GetOwningComponent())
+					{
+						const float RangeCheckMin = 8.f;
+						float A = GetSocketDistance(FName(TEXT("ik_foot_l")), FName(TEXT("VB foot_target_l")), Comp);
+						float B = GetSocketDistance(FName(TEXT("ik_foot_r")), FName(TEXT("VB foot_target_r")), Comp);
+						FDynamicMontageParams Params;
+						Params.BlendInTime = 0.2f;
+						Params.BlendOutTime = 0.2f;
+						Params.PlayRate = 1.5f;
+						Params.StartTime = 0.8f;
+						if (A > RangeCheckMin)
+						{
+							Params.Animation = DynamicTransitionLeft;							
+							PlayDynamicTransition(Params, 0.1f);
+						}
+
+						if (B > RangeCheckMin)
+						{
+							Params.Animation = DynamicTransitionRight;	
+							PlayDynamicTransition(Params, 0.1f);						
+						}
+					}
 				}
 			}
 		}
@@ -203,36 +238,42 @@ void UDexCharacterAnimInst::NativeUpdateAnimation(float DeltaTime)
 			{
 				if (UCapsuleComponent* Capsule = Character->GetCapsuleComponent())
 				{
-					if (UWorld* World = GetWorld())
+					if (Character->MovementState == ECharacterMovementState::InAir)
 					{
-						FVector Start = Capsule->GetComponentLocation();
-						float Z = FMath::Clamp(Velocity.Z, -4000.f, -200.f);
-						float ZLength = DexMathUtility::RangeClamped(Velocity.Z, 0.f, -4000.f, 50.f, 2000.f); 
-						FVector End = FVector(Velocity.X, Velocity.Y, Z);
-						End *= ZLength;
-						End += Start;						
-#if DexCHARACTER_ANIMINST_DEBUG_LAND_PREDICTION
-						DrawDebugCapsule(World, Capsule->GetComponentLocation(), Capsule->GetUnscaledCapsuleHalfHeight(), Capsule->GetUnscaledCapsuleRadius(), FQuat::Identity, FColor::Red, false, LastDelta * 3.f);
-#endif
-						FCollisionQueryParams Params;						
-						Params.AddIgnoredActor(Character);
-						FHitResult CapsuleTrace;						
-						if (World->SweepSingleByProfile(CapsuleTrace, Start, End, FQuat::Identity, FName(TEXT("Character")), FCollisionShape::MakeCapsule(Capsule->GetUnscaledCapsuleRadius(), Capsule->GetUnscaledCapsuleHalfHeight()), Params))
+						if (UWorld* World = GetWorld())
 						{
-							if (UCharacterMovementComponent* Movement = Character->GetCharacterMovement())
-							{
-								if (Movement->IsWalkable(CapsuleTrace) && CapsuleTrace.bBlockingHit)
-								{
-									float PredictionCurveValue = LandPredictionCurve->GetFloatValue(CapsuleTrace.Time);
-									LandPrediction = FMath::Lerp(PredictionCurveValue, 0.f, GetCurveValue(FName(TEXT("Mask_LandPrediction"))));
+							FVector Start = Capsule->GetComponentLocation();
+							float Z = FMath::Clamp(Velocity.Z, -4000.f, -200.f);
+							float ZLength = DexMathUtility::RangeClamped(Velocity.Z, 0.f, -4000.f, 50.f, 2000.f);
+							FVector End = FVector(Velocity.X, Velocity.Y, Z);
+							End *= ZLength;
+							End += Start;
 #if DexCHARACTER_ANIMINST_DEBUG_LAND_PREDICTION
-									DrawDebugCapsule(World, CapsuleTrace.ImpactPoint, Capsule->GetUnscaledCapsuleHalfHeight(), Capsule->GetUnscaledCapsuleRadius(), FQuat::Identity, FColor::Red, false, LastDelta * 3.f);
-									
+							DrawDebugCapsule(World, Capsule->GetComponentLocation(), Capsule->GetUnscaledCapsuleHalfHeight(), Capsule->GetUnscaledCapsuleRadius(), FQuat::Identity, FColor::Red, false, LastDelta * 3.f);
 #endif
-								}
-								else
+							FCollisionQueryParams Params;
+							Params.AddIgnoredActor(Character);
+							FHitResult CapsuleTrace;
+							if (World->SweepSingleByProfile(CapsuleTrace, Start, End, FQuat::Identity, FName(TEXT("Character")), FCollisionShape::MakeCapsule(Capsule->GetUnscaledCapsuleRadius(), Capsule->GetUnscaledCapsuleHalfHeight()), Params))
+							{
+								if (UCharacterMovementComponent* Movement = Character->GetCharacterMovement())
 								{
-									LandPrediction = 0.f;
+									if (Movement->IsWalkable(CapsuleTrace) && CapsuleTrace.bBlockingHit)
+									{
+										float PredictionCurveValue = LandPredictionCurve->GetFloatValue(CapsuleTrace.Time);
+										LandPrediction = FMath::Lerp(PredictionCurveValue, 0.f, GetCurveValue(FName(TEXT("Mask_LandPrediction"))));
+
+										// Landprediction climbs 0.0-1.0, when 40% towards the ground, set falling. when above 98.5%, remove it.
+										Character->SetFalling(FMath::IsWithin(LandPrediction, 0.4f, 0.985f));
+#if DexCHARACTER_ANIMINST_DEBUG_LAND_PREDICTION
+										DrawDebugCapsule(World, CapsuleTrace.ImpactPoint, Capsule->GetUnscaledCapsuleHalfHeight(), Capsule->GetUnscaledCapsuleRadius(), FQuat::Identity, FColor::Red, false, LastDelta * 3.f);
+
+#endif
+									}
+									else
+									{
+										LandPrediction = 0.f;
+									}
 								}
 							}
 						}
@@ -460,6 +501,32 @@ bool UDexCharacterAnimInst::PlayTransitionAnimation(FDynamicMontageParams Params
 	UAnimMontage* Result = PlaySlotAnimationAsDynamicMontage(Params.Animation, Params.SlotName, Params.BlendInTime, Params.BlendOutTime, Params.PlayRate, 1, -1.f, Params.StartTime);
 	return Result != nullptr;
 }	
+
+void UDexCharacterAnimInst::PlayDynamicTransition(FDynamicMontageParams Params, const float ReTriggerDelay)
+{
+	if (nullptr == Params.Animation)
+	{
+		return;
+	}
+
+	static bool bGateClosed = false;
+	if (!bGateClosed)
+	{
+		PlayTransitionAnimation(Params);
+		bGateClosed = true;
+
+		if (UWorld* World = GetWorld())
+		{
+			auto Gate = [&]() {
+				bGateClosed = false;
+			};
+
+			FTimerManager& TimerManager = World->GetTimerManager();
+			FTimerHandle Temp;
+			TimerManager.SetTimer(Temp, FTimerDelegate::CreateLambda(Gate), ReTriggerDelay, false, 0.f);
+		}
+	}
+}
 
 void UDexCharacterAnimInst::SetHipsDirection(ECharacterHipsDirection Dir)
 {

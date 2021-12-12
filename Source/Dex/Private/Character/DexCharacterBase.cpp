@@ -5,7 +5,11 @@
 #include "Curves/CurveVector.h"
 #include "Curves/CurveFloat.h"
 #include "Character/DexCharacterAnimInst.h"
+#include "GameFramework/HUD.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "AbilitySystemComponent.H"
+#include "DexGlobals.h"
+#include "Weapon/DexWeaponBase.h"
 
 DEFINE_LOG_CATEGORY(LogDexCharacter);
 
@@ -25,6 +29,10 @@ ADexCharacterBase::ADexCharacterBase(const FObjectInitializer& ObjectInitializer
 	RotationMode = ECharacterRotationMode::LookingDirection;
 	DesiredRotationMode = ECharacterRotationMode::LookingDirection;
 	MovementAction = ECharacterMovementAction::None;
+
+	OverlayState = ECharacterOverlayState::Rifle;
+
+	CurrentWeapon = nullptr;
 }
 
 void ADexCharacterBase::BeginPlay()
@@ -45,11 +53,6 @@ void ADexCharacterBase::BeginPlay()
 	TargetRotation = ActorRot;
 	LastVelocityRotation = ActorRot;
 	LastMovementInputRotation = ActorRot;
-
-	if (ensure(AbilitySystemComponent) && DefaultAbilitySet)
-	{
-		DefaultAbilitySet->GiveAbilities(AbilitySystemComponent);
-	}
 }
 
 void ADexCharacterBase::Tick(float DeltaTime)
@@ -62,7 +65,8 @@ void ADexCharacterBase::Tick(float DeltaTime)
 
 	if (MovementState == ECharacterMovementState::Grounded)
 	{
-		UpdateCharacterMovment();
+		UpdateCharacterMovement();
+		UpdateCharacterMovementTags();
 		UpdateGroundRotation();
 	}
 	else
@@ -82,11 +86,12 @@ void ADexCharacterBase::SetupPlayerInputComponent(UInputComponent* PIC)
 		PIC->BindAxis(TEXT("Look"), this, &ADexCharacterBase::Look);
 		PIC->BindAxis(TEXT("Up"), this, &ADexCharacterBase::Up);
 
-		PIC->BindAction(TEXT("Jump"), IE_Pressed, this, &ACharacter::Jump);		
 		PIC->BindAction(TEXT("Sprint"), IE_Pressed, this, &ADexCharacterBase::Sprint);
 		PIC->BindAction(TEXT("Sprint"), IE_Released, this, &ADexCharacterBase::Sprint);
 		PIC->BindAction(TEXT("Aim"), IE_Pressed, this, &ADexCharacterBase::Aim);
 		PIC->BindAction(TEXT("Aim"), IE_Released, this, &ADexCharacterBase::Aim);
+
+		PIC->BindAction(TEXT("TestKey"), IE_Pressed, this, &ADexCharacterBase::TestFunction);
 	}
 
 	if (ensure(AbilitySystemComponent))
@@ -96,6 +101,33 @@ void ADexCharacterBase::SetupPlayerInputComponent(UInputComponent* PIC)
 	} 
 
 	Super::SetupPlayerInputComponent(PIC);
+}
+
+void ADexCharacterBase::TestFunction()
+{
+	if (DefaultWeaponTemplate)
+	{
+		if (UWorld* World = GetWorld())
+		{
+			FActorSpawnParameters Params;
+			Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+			if (USkeletalMeshComponent* MeshComp = GetMesh())
+			{
+				CurrentWeapon = World->SpawnActor<ADexWeaponBase>(DefaultWeaponTemplate, GetActorTransform(), Params);
+				if (ensure(CurrentWeapon))
+				{
+					FTransform AttachTransform = MeshComp->GetSocketTransform(CurrentWeapon->AttachSocket);
+					FVector LocationOffset = AttachTransform.GetLocation() + CurrentWeapon->GunAttachOffset.GetLocation();
+					FRotator RotationOffset = AttachTransform.GetRotation().Rotator() + CurrentWeapon->GunAttachOffset.GetRotation().Rotator();
+					
+					CurrentWeapon->SetActorLocation(LocationOffset);
+					CurrentWeapon->SetActorRotation(RotationOffset);
+					
+					CurrentWeapon->AttachWeaponTo(this);
+				}
+			}			
+		}
+	}
 }
 
 bool ADexCharacterBase::SetMovementModel()
@@ -198,6 +230,11 @@ void ADexCharacterBase::InitAbilityComponent()
 
 		AbilitySystemComponent = State->AbilitySystemComponent;
 		AbilitySystemComponent->SetAvatarActor(this);
+
+		if (DefaultAbilitySet)
+		{
+			DefaultAbilitySet->GiveAbilities(AbilitySystemComponent);
+		}
 	}
 }
 
@@ -383,18 +420,16 @@ void ADexCharacterBase::UpdateGroundRotation()
 				{
 					FirstPersonAimFallback();
 				}
+				else
+				{
+					UpdateGroundRotationFinishUp();
+				}
 			}
 			else
 			{
 				FirstPersonAimFallback();
 			}
-
-			if (RotationMode == ECharacterRotationMode::VelocityDirection ||
-				RotationMode == ECharacterRotationMode::LookingDirection)
-			{
-				UpdateGroundRotationFinishUp();
-			}
-
+			
 			TargetRotation = GetActorRotation();
 		}
 	}
@@ -450,6 +485,11 @@ void ADexCharacterBase::Landed(const FHitResult& Hit)
 	Super::Landed(Hit);
 
 	MovementState = ECharacterMovementState::Grounded;	
+	
+	if (UAbilitySystemComponent* Comp = GetAbilitySystemComponent())
+	{
+		Comp->RemoveLooseGameplayTag(UDexGlobals::Get().GetGameplayTags().CharacteActionJump);
+	}
 
 	float FallSplit = 0.f;
 	if (UWorld* World = GetWorld())
@@ -463,8 +503,15 @@ void ADexCharacterBase::Landed(const FHitResult& Hit)
 	{
 		Roll();
 	}
+
+	CharacterOnLanded.Broadcast(Hit.ImpactPoint);
 }
 
+void ADexCharacterBase::Jump()
+{
+	Super::Jump();
+	
+}
 
 void ADexCharacterBase::OnJumped_Implementation()
 {
@@ -491,6 +538,11 @@ void ADexCharacterBase::OnJumped_Implementation()
 		{
 			AnimInst->Jumped();
 		}
+	}
+
+	if (UAbilitySystemComponent* Comp = GetAbilitySystemComponent())
+	{
+		Comp->AddLooseGameplayTag(UDexGlobals::Get().GetGameplayTags().CharacteActionJump);
 	}
 }
 
@@ -550,6 +602,10 @@ ECharacterLocomotionState ADexCharacterBase::AllowedLocomotionState()
 	{
 		if (RotationMode == ECharacterRotationMode::AimingDirection)
 		{
+			if (DesiredLocomotionState == ECharacterLocomotionState::Sprinting)
+			{
+				return ECharacterLocomotionState::Running;
+			}
 			return DesiredLocomotionState;
 		}
 
@@ -666,13 +722,13 @@ float ADexCharacterBase::GetMappedSpeed()
 	float MapA = DexMathUtility::RangeClamped(Speed, 0.f, LocalWalkSpeed, 0.f, 1.f);
 	float MapB = DexMathUtility::RangeClamped(Speed, LocalWalkSpeed, LocalRunSpeed, 1.f, 2.f);
 	float MapC = DexMathUtility::RangeClamped(Speed, LocalRunSpeed, LocalSprintSpeed, 2.f, 3.f);
-
+			
 	float A = Speed > LocalWalkSpeed ? MapB : MapA;
 	float B = Speed > LocalRunSpeed ? MapC : A;
 	return B;	
 }
 
-void ADexCharacterBase::UpdateCharacterMovment()
+void ADexCharacterBase::UpdateCharacterMovement()
 {
 	// Update Character Movement Prior to checks
 	CharacterMovementSettings = GetTargetMovementSettings();
@@ -685,15 +741,15 @@ void ADexCharacterBase::UpdateCharacterMovment()
 	{
 		if (Allowed == ECharacterLocomotionState::Walking)
 		{
-			Movement->MaxWalkSpeed = CharacterMovementSettings.WalkSpeed;			
+			Movement->MaxWalkSpeed = CharacterMovementSettings.WalkSpeed;
 		}
 		if (Allowed == ECharacterLocomotionState::Running)
 		{
-			Movement->MaxWalkSpeed = CharacterMovementSettings.RunSpeed;			
+			Movement->MaxWalkSpeed = CharacterMovementSettings.RunSpeed;
 		}
 		if (Allowed == ECharacterLocomotionState::Sprinting)
 		{
-			Movement->MaxWalkSpeed = CharacterMovementSettings.SprintSpeed;			
+			Movement->MaxWalkSpeed = CharacterMovementSettings.SprintSpeed;
 		}
 
 		if (UCurveVector* Curve = CharacterMovementSettings.MovementCurve)
@@ -706,7 +762,53 @@ void ADexCharacterBase::UpdateCharacterMovment()
 		}
 		else
 		{
-			UE_LOG(LogDexCharacter, Warning, TEXT("ADexCharacterBase::UpdateCharacterMovment() Unable to find CharacterMovementSettings.MovementCurve")); }
+			UE_LOG(LogDexCharacter, Warning, TEXT("ADexCharacterBase::UpdateCharacterMovment() Unable to find CharacterMovementSettings.MovementCurve")); 
+		}
+	}
+}
+
+void ADexCharacterBase::UpdateCharacterMovementTags()
+{
+	static ECharacterLocomotionState LastState = ECharacterLocomotionState::None;
+	if (LocomotionState == LastState)
+	{
+		return;
+	}
+	LastState = LocomotionState;
+	
+	if (UAbilitySystemComponent* Comp = GetAbilitySystemComponent())
+	{
+		UDexGlobals& Globals = UDexGlobals::Get();
+		FDexGameplayTags& DexGameplayTags = Globals.GetGameplayTags();
+		FGameplayTagContainer LocoTags;
+		LocoTags.AddTagFast(DexGameplayTags.CharacterLocomotionWalking);
+		LocoTags.AddTagFast(DexGameplayTags.CharacterLocomotionRunning);
+		LocoTags.AddTagFast(DexGameplayTags.CharacterLocomotionSprinting);
+		
+		FGameplayEventData Payload;
+		Payload.Instigator = this;
+		Payload.TargetTags.AppendTags(LocoTags);
+		switch (LocomotionState)
+		{
+			case ECharacterLocomotionState::Walking:
+			{
+				Payload.InstigatorTags.AddTag(DexGameplayTags.CharacterLocomotionWalking);
+				FScopedPredictionWindow NewScopedWindow(AbilitySystemComponent, true);
+				Comp->HandleGameplayEvent(DexGameplayTags.CharacterStateTrigger, &Payload);
+			} break;
+			case ECharacterLocomotionState::Running:
+			{
+				Payload.InstigatorTags.AddTag(DexGameplayTags.CharacterLocomotionRunning);
+				FScopedPredictionWindow NewScopedWindow(AbilitySystemComponent, true);
+				Comp->HandleGameplayEvent(DexGameplayTags.CharacterStateTrigger, &Payload);			
+			} break;
+			case ECharacterLocomotionState::Sprinting:
+			{
+				Payload.InstigatorTags.AddTag(DexGameplayTags.CharacterLocomotionSprinting);
+				FScopedPredictionWindow NewScopedWindow(AbilitySystemComponent, true);
+				Comp->HandleGameplayEvent(DexGameplayTags.CharacterStateTrigger, &Payload);				
+			} break;
+		};
 	}
 }
 
@@ -771,5 +873,35 @@ void ADexCharacterBase::ChangeLocomotionState(ECharacterLocomotionState NewState
 	if (LocomotionState != NewState)
 	{
 		LocomotionState = NewState;
+	}
+}
+
+void ADexCharacterBase::SetFalling(bool bFalling)
+{
+	static bool bLastFalling = false;
+	if (bLastFalling == bFalling)
+	{
+		return;
+	}
+
+	bLastFalling = bFalling;
+	if (UAbilitySystemComponent* Comp = GetAbilitySystemComponent())
+	{
+		FGameplayEventData Params;
+		Params.Instigator = this;
+		Params.TargetTags.AddTag(UDexGlobals::Get().GetGameplayTags().CharacterActionFalling);			
+		
+		if (bFalling)
+		{
+			LastOverlayState = OverlayState;			
+			OverlayState = ECharacterOverlayState::Default;
+			Comp->HandleGameplayEvent(UDexGlobals::Get().GetGameplayTags().CharacterStateTrigger, &Params);
+		}
+		else
+		{
+			OverlayState = LastOverlayState;
+			Params.InstigatorTags.AddTag(UDexGlobals::Get().GetGameplayTags().CharacterActionFalling);						
+			Comp->HandleGameplayEvent(UDexGlobals::Get().GetGameplayTags().CharacterStateTrigger, &Params);			
+		}
 	}
 }

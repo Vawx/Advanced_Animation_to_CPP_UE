@@ -1,3 +1,5 @@
+#pragma once 
+
 #include "CoreMinimal.h"
 #include "GameplayTagsManager.h"
 #include "GameplayTagContainer.h"
@@ -6,7 +8,23 @@
 
 struct FDexGameplayTags
 {	
-	FGameplayTag DefaultGameplayTag;
+	FGameplayTag CharacteActionJump;
+	FGameplayTag CharacterActionRolling;
+	FGameplayTag CharacterActionFalling;
+	FGameplayTag CharacterActionAiming;
+	FGameplayTag CharacterLocomotionWalking;
+	FGameplayTag CharacterLocomotionRunning;
+	FGameplayTag CharacterLocomotionSprinting;	
+	FGameplayTag BaseWeaponTypePistol;
+	FGameplayTag BaseWeaponTypeRifle;
+	FGameplayTag BaseWeaponTypeShotgun;
+	FGameplayTag BaseWeaponTypeTorch;
+	FGameplayTag BaseWeaponTypeRocketLauncher;
+	FGameplayTag BaseWeaponTypeGrenadeLauncher;
+	FGameplayTag CharacterRotationmodeLooking;
+	FGameplayTag CharacterRotationmodeVelocity;
+	FGameplayTag CharacterRotationmodeAiming;
+	FGameplayTag CharacterStateTrigger;
 
 	FDexGameplayTags();
 
@@ -23,6 +41,7 @@ class DEX_API UDexGlobals : public UObject
 public:
 
 	static UDexGlobals& Get();
+	FDexGameplayTags& GetGameplayTags() { return GameplayTags;  }
 	static bool IsValid();
 	
 

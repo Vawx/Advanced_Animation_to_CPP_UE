@@ -37,9 +37,21 @@ protected:
 	virtual void OnRemoveAbility(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec) override;
 	virtual void OnAvatarSet(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec) override;
 	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
+	virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;	
 	virtual void PreActivate(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, FOnGameplayAbilityEnded::FDelegate* OnGameplayAbilityEndedDelegate, const FGameplayEventData* TriggerEventData = nullptr) override;
 	virtual void ConfirmActivateSucceed();
+
+	template<class T>
+	T* GetAbilityComponentAs()
+	{
+		return Cast<T>(GetAbilitySystemComponentFromActorInfo());
+	}
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Activation Rule")
 	EDexGameplayAbilityActivationType ActivationType;
+
+	/** These tags are applied to the owner while this ablity is active*/
+	UPROPERTY(EditDefaultsOnly, Category = "Applied Tags")
+	FGameplayTagContainer AppliedTags;
+	
 };

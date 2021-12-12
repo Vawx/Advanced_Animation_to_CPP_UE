@@ -338,9 +338,7 @@ public:
 	void SetOverrideState(const int32 Override) { OverlayOverrideState = Override; }
 	 
 protected:
-
-	int OverlayOverrideState;
-
+	
 	float LastDelta;
 
 	FVector Acceleration;
@@ -357,11 +355,20 @@ protected:
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Animation State Data")			
 	FTurnInPlaceAsset TurnInPlaceRight180;
 
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Animation State Data")			
+	UAnimMontage* DynamicTransitionLeft;
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Animation State Data")			
+	UAnimMontage* DynamicTransitionRight;	
+
 	UPROPERTY(BlueprintReadOnly, Category = "Animation State Data")			
 	FVelocityBlend VelocityBlend;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Animation State Data")				
 	FLeanAmount LeanAmount;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Animation State Data")		
+	int OverlayOverrideState;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Animation State Data")	
 	bool bRotateLeft;
@@ -437,6 +444,7 @@ protected:
 	void UpdateAiming();
 	void UpdateLayerValues();
 	void UpdateFeet();
+	void PlayDynamicTransition(FDynamicMontageParams Params, const float ReTriggerDelay);
 
 	UFUNCTION(BlueprintCallable, Category = "Dex Character Anim Inst")
 	bool PlayTransitionAnimation(FDynamicMontageParams Params);

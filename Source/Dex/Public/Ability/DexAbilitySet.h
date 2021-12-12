@@ -5,6 +5,8 @@
 #include "Ability/DexGameplayAbility.h"
 #include "DexAbilitySet.generated.h"
 
+class UGameplayAbility;
+
 UENUM(BlueprintType)
 namespace EAbilityInputBinds
 {
@@ -18,7 +20,7 @@ namespace EAbilityInputBinds
 		LeftMouseButton,
 		LeftAlt,
 		LeftShift,
-		AbilityNine,
+		SpaceBar,
 	};
 }
 
@@ -40,7 +42,10 @@ class DEX_API UDexAbilitySet : public UDataAsset
 	GENERATED_UCLASS_BODY()
 	
 	UPROPERTY(EditAnywhere, Category = "Ability Set")
-	TArray<FAbilityBindInfo> Abilities;
-	
+	TArray<FAbilityBindInfo> BindAbilities;
+
+	UPROPERTY(EditAnywhere, Category = "Ability Set")
+	TArray<TSubclassOf<UDexGameplayAbility>> NonBindAbilties;
+
 	void GiveAbilities(class UAbilitySystemComponent *AbilitySystemComponent) const;
 };

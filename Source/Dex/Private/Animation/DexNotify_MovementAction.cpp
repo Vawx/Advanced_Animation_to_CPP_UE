@@ -46,6 +46,6 @@ void UDexNotify_MovementAction::NotifyEnd(USkeletalMeshComponent* MeshComp, UAni
 FString UDexNotify_MovementAction::GetNotifyName_Implementation() const
 {
 	FString NotifyName = FString(TEXT("MovementAction: "));
-	NotifyName.Append(DexEnumToString<ECharacterMovementAction>::EnumToString(FString(TEXT("EMovementAction")), MovementAction));
+	NotifyName.Append(DexEnumToString<ECharacterMovementAction>::EnumToString(FString(TEXT("ECharacterMovementAction")), MovementAction));
 	return NotifyName;
 }

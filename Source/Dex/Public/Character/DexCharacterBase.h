@@ -19,6 +19,9 @@ class UCapsuleComponent;
 class UCurveFloat;
 class UCurveVector;
 class UDexAbilitySystemComponent;
+class ADexWeaponBase;
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDexCharacterOnLanded, FVector, Location);
 
 UENUM(BlueprintType)
 enum class ECharacterViewMode : uint8
@@ -85,6 +88,7 @@ enum class ECharacterOverlayState : uint8
 	Binoculars,
 	Box,
 	Barrel,
+	Shotgun,
 	RocketLauncher,
 	GrenadeLauncher,
 };
@@ -210,25 +214,34 @@ public:
 	
 	bool Roll();	
 	void Sprint();
+	void SetFalling(bool bFalling);
 	
 protected:	
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Weapon")
+	TSubclassOf<ADexWeaponBase> DefaultWeaponTemplate;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Weapon")	
+	ADexWeaponBase* CurrentWeapon;
 
 	// actor virtuals
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PIC) override;
+	virtual void Jump() override;
 	virtual void OnJumped_Implementation() override;
 	virtual void Landed(const FHitResult& Hit) override;
 	virtual void OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode = 0) override;
 	virtual void OnRep_PlayerState() override;
 	virtual void PossessedBy(AController* C);
-
+	
 	// input
 	void Forward(const float Amount);
 	void Right(const float Amount);
 	void Look(const float Amount);
 	void Up(const float Amount);
 	void Aim();	
+	void TestFunction();	
 	void PlayerInputMovement(bool bForward);
 	void FixDiagonalGameplayValues(float& YOut, float& XOut);
 	float MovementInputAmount();
@@ -245,7 +258,8 @@ protected:
 	ECharacterLocomotionState ActualLocomotionState(ECharacterLocomotionState AllowedLocomotion);
 	FCharacterMovementSettings GetTargetMovementSettings();
 	float GetMappedSpeed();
-	void UpdateCharacterMovment();
+	void UpdateCharacterMovement();
+	void UpdateCharacterMovementTags();
 	bool CanSprint();
 	void ChangeViewMode(ECharacterViewMode NewView);
 	void ChangeRotationMode(ECharacterRotationMode NewMode);
@@ -285,33 +299,7 @@ protected:
 	float GetAnimCurveValue(const FName& Name);
 	UAnimMontage* GetRollAnimation();
 
-	template<class T>
-	T* GetAnimInstance() 
-	{
-		if (USkeletalMeshComponent* MeshComp = GetMesh())
-		{
-			return Cast<T>(MeshComp->GetAnimInstance());
-		}
-		return nullptr;
-	}
-
-	template<class T>
-	T* GetState()
-	{
-		if (APlayerState* State = GetPlayerState())
-		{
-			return Cast<T>(State);
-		}
-		return nullptr;
-	}
-
-	template<class T>
-	T* GetAbilityComponent()
-	{
-		return Cast<T>(GetAbilitySystemComponent());
-	}
-
-	// ability
+		// ability
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Ability")
 	UDexAbilitySystemComponent* AbilitySystemComponent;
 
@@ -321,6 +309,32 @@ protected:
 	void InitAbilityComponent();
 
 public:
+
+	template<class T>
+	T* GetAnimInstance() 
+	{
+		if (USkeletalMeshComponent* MeshComp = GetMesh())
+		{
+			return Cast<T>(MeshComp->GetAnimInstance());
+		}
+		return nullptr;
+	}
+	
+	template<class T>
+	T* GetState()
+	{
+		if (APlayerState* State = GetPlayerState())
+		{
+			return Cast<T>(State);
+		}
+		return nullptr;
+	}
+	
+	template<class T>
+	T* GetAbilityComponent()
+	{
+		return Cast<T>(GetAbilitySystemComponent());
+	}
 
 	// states
 	bool bJumping;
@@ -343,8 +357,12 @@ public:
 	ECharacterRotationMode DesiredRotationMode;
 	ECharacterMovementAction MovementAction;
 	ECharacterOverlayState OverlayState;
+	ECharacterOverlayState LastOverlayState;	
 	ECharacterGroundedEntryState GroundedEntryState;
 
 	FCharacterMovementSettings CharacterMovementSettings;
 	FCharacterMovementSettingsState* CharacterMovementStateData;
+
+	UPROPERTY(BlueprintAssignable, Category = "Landed")
+	FDexCharacterOnLanded CharacterOnLanded;
 };

@@ -16,3 +16,10 @@ bool UDexPlayerBlueprintLib::AttemptRoll(ADexCharacterBase* Base)
 	}
 	return false;
 }
+
+TArray<FGameplayTag> UDexPlayerBlueprintLib::GetArrayFromContainer(FGameplayTagContainer Container)
+{
+	TArray<FGameplayTag> Result;
+	Container.GetGameplayTagArray(Result);
+	return Result;
+}

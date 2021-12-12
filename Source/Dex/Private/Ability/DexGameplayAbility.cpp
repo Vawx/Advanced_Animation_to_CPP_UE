@@ -1,5 +1,5 @@
 #include "Ability/DexGameplayAbility.h"
-#include "AbilitySystemComponent.h"
+#include "Ability/DexAbilitySystemComponent.h"
 
 UDexGameplayAbility::UDexGameplayAbility()
 {
@@ -48,6 +48,8 @@ bool UDexGameplayAbility::CanBeCanceled() const
 
 void UDexGameplayAbility::OnGiveAbility(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec)
 {
+	Super::OnGiveAbility(ActorInfo, Spec);
+	
 	if (ActivationType == EDexGameplayAbilityActivationType::Passive)
 	{
 		FGameplayTagContainer ActorInfoOwnedTags;
@@ -69,7 +71,6 @@ void UDexGameplayAbility::OnGiveAbility(const FGameplayAbilityActorInfo* ActorIn
 			}
 		}
 	}
-	Super::OnGiveAbility(ActorInfo, Spec);
 }
 
 void UDexGameplayAbility::OnRemoveAbility(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec)
@@ -85,6 +86,21 @@ void UDexGameplayAbility::OnAvatarSet(const FGameplayAbilityActorInfo* ActorInfo
 void UDexGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
 {
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
+
+	if (UDexAbilitySystemComponent* Comp = GetAbilityComponentAs<UDexAbilitySystemComponent>())
+	{
+		Comp->AddLooseGameplayTags(AppliedTags);
+	}
+}
+
+void UDexGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
+{
+	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
+
+	if (UDexAbilitySystemComponent* Comp = GetAbilityComponentAs<UDexAbilitySystemComponent>())
+	{
+		Comp->RemoveLooseGameplayTags(AppliedTags);
+	}
 }
 
 void UDexGameplayAbility::PreActivate(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, FOnGameplayAbilityEnded::FDelegate* OnGameplayAbilityEndedDelegate, const FGameplayEventData* TriggerEventData)
