@@ -7,8 +7,11 @@
 #include "Weapon/DexProjectile.h"
 #include "DexWeaponBase.generated.h"
 
+#define DEBUG_DEXWEAPONBASE_PROJECTILE_TRACE 1
+
 class UDexWeaponComponent;
 class USkeletalMeshComponent;
+class UParticleSystemComponent;
 
 USTRUCT(BlueprintType)
 struct FDexWeaponData : public FTableRowBase
@@ -32,6 +35,7 @@ class DEX_API ADexWeaponBase : public AActor
 	
 public:	
 
+	void Fire();
 	void AttachWeaponTo(ADexCharacterBase* Character);
 	void DetachWeapon();
 
@@ -54,8 +58,14 @@ protected:
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Weapon")
 	USkeletalMeshComponent* MeshComp;
 
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Dex Projectile")
+	UParticleSystemComponent* FlashSystem;
+
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Weapon")
 	UDexWeaponComponent* WeaponComponent;
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Weapon")	
+	TSubclassOf<ADexProjectile> ProjectileTemplate;
 
 	ADexCharacterBase* AttachedOwner;
 };

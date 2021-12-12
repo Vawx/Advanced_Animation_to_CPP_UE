@@ -90,6 +90,7 @@ void ADexCharacterBase::SetupPlayerInputComponent(UInputComponent* PIC)
 		PIC->BindAction(TEXT("Sprint"), IE_Released, this, &ADexCharacterBase::Sprint);
 		PIC->BindAction(TEXT("Aim"), IE_Pressed, this, &ADexCharacterBase::Aim);
 		PIC->BindAction(TEXT("Aim"), IE_Released, this, &ADexCharacterBase::Aim);
+		PIC->BindAction(TEXT("Fire"), IE_Released, this, &ADexCharacterBase::Fire);		
 
 		PIC->BindAction(TEXT("TestKey"), IE_Pressed, this, &ADexCharacterBase::TestFunction);
 	}
@@ -238,6 +239,12 @@ void ADexCharacterBase::InitAbilityComponent()
 	}
 }
 
+void ADexCharacterBase::ImpactOverlap(TArray<AActor*> Impacts)
+{
+
+}
+
+
 void ADexCharacterBase::Forward(const float Amount)
 {
 	CharacterRuntimeInputData.ForwardAxisAmount = Amount;
@@ -274,7 +281,14 @@ void ADexCharacterBase::Aim()
 	{
 		RotationMode = DesiredRotationMode;
 	}
+}
 
+void ADexCharacterBase::Fire()
+{
+	if (CurrentWeapon)
+	{
+		CurrentWeapon->Fire();
+	}
 }
 
 void ADexCharacterBase::Sprint()

@@ -241,6 +241,7 @@ protected:
 	void Look(const float Amount);
 	void Up(const float Amount);
 	void Aim();	
+	void Fire();	
 	void TestFunction();	
 	void PlayerInputMovement(bool bForward);
 	void FixDiagonalGameplayValues(float& YOut, float& XOut);
@@ -335,6 +336,10 @@ public:
 	{
 		return Cast<T>(GetAbilitySystemComponent());
 	}
+
+	// callback
+
+	void ImpactOverlap(TArray<AActor*> Impacts);
 
 	// states
 	bool bJumping;
