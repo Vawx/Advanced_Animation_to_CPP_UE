@@ -114,12 +114,11 @@ struct FCameraInstanceData : public FTableRowBase
 
 
 UCLASS()
-class DEX_API UDexPlayerCameraAnimInst : public UAnimInstance
+class DEX_API UDexPlayerCameraAnimInstance : public UAnimInstance
 {
 	GENERATED_UCLASS_BODY()
 
 public:
-
 	
 	UPROPERTY(BlueprintReadOnly, Category = "CameraAnimInstance")
 	ECharacterMovementState MovementState;

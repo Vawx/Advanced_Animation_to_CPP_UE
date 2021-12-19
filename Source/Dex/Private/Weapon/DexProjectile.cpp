@@ -57,7 +57,9 @@ void ADexProjectile::OnProjectileOverlap(UPrimitiveComponent* OverlappedComponen
 				Impact->Trigger();				
 
 				Destroy();
+				return;
 			}
+			Impact = nullptr;
 		}
 	}
 }

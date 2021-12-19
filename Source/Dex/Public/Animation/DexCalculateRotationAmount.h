@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "AnimationModifier.h"
+#include "AnimationModifiers/Public/AnimationModifier.h"
 #include "DexCalculateRotationAmount.generated.h"
 
 UCLASS()

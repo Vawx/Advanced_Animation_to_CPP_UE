@@ -2,7 +2,7 @@
 #include "Camera/DexPlayerCameraAnimInst.h"
 #include "Character/DexCharacterBase.h"
 
-UDexPlayerCameraAnimInst::UDexPlayerCameraAnimInst(const FObjectInitializer& ObjectInitializer) :
+UDexPlayerCameraAnimInstance::UDexPlayerCameraAnimInstance(const FObjectInitializer& ObjectInitializer) :
 Super(ObjectInitializer)
 {
 	MovementState = ECharacterMovementState::Grounded;
@@ -13,7 +13,7 @@ Super(ObjectInitializer)
 	ViewMode = ECharacterViewMode::ThirdPerson;
 }
 
-void UDexPlayerCameraAnimInst::NativeBeginPlay()
+void UDexPlayerCameraAnimInstance::NativeBeginPlay()
 {
 	Super::NativeBeginPlay();
 
@@ -24,7 +24,7 @@ void UDexPlayerCameraAnimInst::NativeBeginPlay()
 	}	
 }
 
-void UDexPlayerCameraAnimInst::NativeUpdateAnimation(float DeltaSeconds)
+void UDexPlayerCameraAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 {
 	if (ADexCharacterBase* Character = GetInstancePawn<ADexCharacterBase>())
 	{
@@ -39,7 +39,7 @@ void UDexPlayerCameraAnimInst::NativeUpdateAnimation(float DeltaSeconds)
 	Super::NativeUpdateAnimation(DeltaSeconds);	
 }
 
-void UDexPlayerCameraAnimInst::GetCameraInstanceCurveData(float& CameraOffsetX, float& CameraOffsetY, float& CameraOffsetZ, float& PivotLagSpeedX, float& PivotLagSpeedY, float& PivotLagSpeedZ, float& RotationLagSpeed)
+void UDexPlayerCameraAnimInstance::GetCameraInstanceCurveData(float& CameraOffsetX, float& CameraOffsetY, float& CameraOffsetZ, float& PivotLagSpeedX, float& PivotLagSpeedY, float& PivotLagSpeedZ, float& RotationLagSpeed)
 {
 	if (CameraInstanceData)
 	{
